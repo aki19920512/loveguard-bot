@@ -3,7 +3,7 @@ const line = require('@line/bot-sdk');
 const axios = require('axios');
 
 const app = express();
-const port = process.env.PORT || 3000; // 環境変数PORTを使用し、デフォルトは3000
+const port = process.env.PORT || 3000;
 
 // LINE Bot SDK設定
 const config = {
@@ -33,12 +33,8 @@ async function handleEvent(event) {
 
   try {
     // OpenAI APIを使用して応答を生成
-    const openaiResponse = await axios.post(`https://api.openai.com/v1/engines/${process.env.OPENAI_ASSISTANT_ID}/completions`, {
-      prompt: event.message.text,
-      max_tokens: 100,
-      n: 1,
-      stop: null,
-      temperature: 0.7
+    const openaiResponse = await axios.post('https://api.openai.com/v1/assistants/${process.env.OPENAI_ASSISTANT_ID}/query', {
+      query: event.message.text,
     }, {
       headers: {
         'Content-Type': 'application/json',
@@ -46,9 +42,9 @@ async function handleEvent(event) {
       }
     });
 
-    responseMessage = openaiResponse.data.choices[0].text.trim();
+    responseMessage = openaiResponse.data.choices[0].message.content.trim();
   } catch (error) {
-    console.error('Error with OpenAI API:', error);
+    console.error('Error with OpenAI API:', error.response ? error.response.data : error.message);
     responseMessage = 'Sorry, I could not process your message.';
   }
 
