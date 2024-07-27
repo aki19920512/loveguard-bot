@@ -17,7 +17,7 @@ app.post('/webhook', line.middleware(config), (req, res) => {
   Promise.all(req.body.events.map(handleEvent))
     .then(result => res.json(result))
     .catch(err => {
-      console.error(err);
+      console.error('Webhook Error:', err);
       res.status(500).end();
     });
 });
@@ -47,7 +47,16 @@ async function handleEvent(event) {
 
     responseMessage = openaiResponse.data.choices[0].message.content.trim();
   } catch (error) {
-    console.error('Error with OpenAI API:', error);
+    if (error.response) {
+      // サーバーがエラー応答を返した場合
+      console.error('OpenAI API Response Error:', error.response.data);
+    } else if (error.request) {
+      // リクエストが送信されたが応答がない場合
+      console.error('OpenAI API No Response:', error.request);
+    } else {
+      // リクエストを設定中にエラーが発生した場合
+      console.error('OpenAI API Request Error:', error.message);
+    }
     responseMessage = 'Sorry, I could not process your message.';
   }
 
