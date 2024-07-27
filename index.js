@@ -32,21 +32,21 @@ async function handleEvent(event) {
   let responseMessage = '';
 
   try {
-    // OpenAI Assistants APIを使用して応答を生成
-    const apiKey = process.env.OPENAI_API_KEY;
-    const assistantId = process.env.OPENAI_ASSISTANT_ID;
-    const openAiApiUrl = `https://api.openai.com/v1/assistants/${assistantId}/query`;
-
-    const openAiResponse = await axios.post(openAiApiUrl, {
-      query: event.message.text,
+    // OpenAI APIを使用して応答を生成
+    const openaiResponse = await axios.post(`https://api.openai.com/v1/engines/${process.env.OPENAI_ASSISTANT_ID}/completions`, {
+      prompt: event.message.text,
+      max_tokens: 100,
+      n: 1,
+      stop: null,
+      temperature: 0.7
     }, {
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
       }
     });
 
-    responseMessage = openAiResponse.data.response; // APIのレスポンスに応じて適切に取得
+    responseMessage = openaiResponse.data.choices[0].text.trim();
   } catch (error) {
     console.error('Error with OpenAI API:', error);
     responseMessage = 'Sorry, I could not process your message.';
