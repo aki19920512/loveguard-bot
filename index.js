@@ -28,9 +28,17 @@ function handleEvent(event) {
 
   console.log(`Received message: ${event.message.text}`);
 
+  let responseMessage = '';
+
+  if (event.message.text === 'こんにちは') {
+    responseMessage = 'こんにちは！';
+  } else {
+    responseMessage = `Received your message: ${event.message.text}`;
+  }
+
   return client.replyMessage(event.replyToken, {
     type: 'text',
-    text: `Received your message: ${event.message.text}`
+    text: responseMessage
   });
 }
 
