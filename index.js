@@ -33,7 +33,7 @@ async function handleEvent(event) {
 
   try {
     // OpenAI APIを使用して応答を生成
-    const openaiResponse = await axios.post('https://api.openai.com/v1/assistants/${process.env.OPENAI_ASSISTANT_ID}/query', {
+    const openaiResponse = await axios.post(`https://api.openai.com/v1/assistants/${process.env.OPENAI_ASSISTANT_ID}/query`, {
       query: event.message.text,
     }, {
       headers: {
