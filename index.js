@@ -34,6 +34,6 @@ function handleEvent(event) {
   });
 }
 
-app.listen(port, () => { // 変更: 環境変数PORTを使用
+app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
