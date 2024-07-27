@@ -7,8 +7,8 @@ const port = process.env.PORT || 3000; // 環境変数PORTを使用し、デフ�
 
 // LINE Bot SDK設定
 const config = {
-  channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN || 'L5fre3gDyK5qFppljPrgdyCUWjP99ItsmV/V1beXNHsJEkefJ8DK24Xbsxkw2Cxk6AjvXKRXG2tuhWWqjxXSgz8vfFp6m8ocakmtvFEeOpXUsVztI2rlolGD5ARLd1Il6sA00yYZxXtqE8PB7Ify5wdB04t89/1O/w1cDnyilFU=',
-  channelSecret: process.env.LINE_CHANNEL_SECRET || '61f424ef0dbb8bf68e3f85929521ff12'
+  channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
+  channelSecret: process.env.LINE_CHANNEL_SECRET
 };
 
 const client = new line.Client(config);
@@ -32,21 +32,21 @@ async function handleEvent(event) {
   let responseMessage = '';
 
   try {
-    // OpenAI APIを使用して応答を生成
-    const openaiResponse = await axios.post('https://api.openai.com/v1/engines/davinci-codex/completions', {
-      prompt: event.message.text,
-      max_tokens: 100,
-      n: 1,
-      stop: null,
-      temperature: 0.7
+    // OpenAI Assistants APIを使用して応答を生成
+    const apiKey = process.env.OPENAI_API_KEY;
+    const assistantId = process.env.OPENAI_ASSISTANT_ID;
+    const openAiApiUrl = `https://api.openai.com/v1/assistants/${assistantId}/query`;
+
+    const openAiResponse = await axios.post(openAiApiUrl, {
+      query: event.message.text,
     }, {
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+        'Authorization': `Bearer ${apiKey}`
       }
     });
 
-    responseMessage = openaiResponse.data.choices[0].text.trim();
+    responseMessage = openAiResponse.data.response; // APIのレスポンスに応じて適切に取得
   } catch (error) {
     console.error('Error with OpenAI API:', error);
     responseMessage = 'Sorry, I could not process your message.';
