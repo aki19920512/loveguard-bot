@@ -2,6 +2,7 @@ const express = require('express');
 const line = require('@line/bot-sdk');
 
 const app = express();
+const port = process.env.PORT || 3000; // 環境変数PORTを使用し、デフォルトは3000
 
 // LINE Bot SDK設定
 const config = {
@@ -33,6 +34,6 @@ function handleEvent(event) {
   });
 }
 
-app.listen(3000, () => {
-  console.log('Server is running on port 3000');
+app.listen(port, () => { // 変更: 環境変数PORTを使用
+  console.log(`Server is running on port ${port}`);
 });
