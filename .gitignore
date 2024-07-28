@@ -1,0 +1,24 @@
+# 環境変数
+.env
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# エディタ/IDE固有のファイル
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS生成ファイル
+.DS_Store
+Thumbs.db
+
+# ログファイル
+*.log
+
+# 一時ファイル
+*.tmp
+*.temp
