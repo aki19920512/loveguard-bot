@@ -57,6 +57,7 @@ async function handleEvent(event) {
       // リクエストを設定中にエラーが発生した場合
       console.error('OpenAI API Request Error:', error.message);
     }
+    console.error('Error Config:', error.config);
     responseMessage = 'Sorry, I could not process your message.';
   }
 
