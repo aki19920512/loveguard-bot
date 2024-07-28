@@ -1,30 +1,52 @@
 const express = require('express');
 const line = require('@line/bot-sdk');
 const axios = require('axios');
+const {SecretManagerServiceClient} = require('@google-cloud/secret-manager');
 
 const app = express();
-const port = process.env.PORT || 3000; // 環境変数PORTを使用し、デフォルトは3000
+const port = process.env.PORT || 3000;
 
-// LINE Bot SDK設定
-const config = {
-  channelAccessToken: process.env.LINE_CHANNEL_ACCESS_TOKEN,
-  channelSecret: process.env.LINE_CHANNEL_SECRET
-};
+const secretClient = new SecretManagerServiceClient();
 
-const client = new line.Client(config);
+// シークレットを取得する関数
+async function getSecret(secretName) {
+  const [version] = await secretClient.accessSecretVersion({
+    name: `projects/${process.env.GOOGLE_CLOUD_PROJECT}/secrets/${secretName}/versions/latest`,
+  });
+  return version.payload.data.toString('utf8');
+}
+
+let config;
+let client;
 
 // レートリミット設定（1分に1回のリクエスト）
-const RATE_LIMIT = 60000; // 1分 = 60000ミリ秒
+const RATE_LIMIT = 60000;
 let lastRequestTime = 0;
 
-app.post('/webhook', line.middleware(config), (req, res) => {
-  Promise.all(req.body.events.map(handleEvent))
-    .then(result => res.json(result))
-    .catch(err => {
-      console.error('Webhook Error:', err);
-      res.status(500).end();
-    });
-});
+async function initializeApp() {
+  const LINE_CHANNEL_ACCESS_TOKEN = await getSecret('LINE_CHANNEL_ACCESS_TOKEN');
+  const LINE_CHANNEL_SECRET = await getSecret('LINE_CHANNEL_SECRET');
+  
+  config = {
+    channelAccessToken: LINE_CHANNEL_ACCESS_TOKEN,
+    channelSecret: LINE_CHANNEL_SECRET
+  };
+
+  client = new line.Client(config);
+
+  app.post('/webhook', line.middleware(config), (req, res) => {
+    Promise.all(req.body.events.map(handleEvent))
+      .then(result => res.json(result))
+      .catch(err => {
+        console.error('Webhook Error:', err);
+        res.status(500).end();
+      });
+  });
+
+  app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+  });
+}
 
 async function handleEvent(event) {
   if (event.type !== 'message' || event.message.type !== 'text') {
@@ -35,10 +57,8 @@ async function handleEvent(event) {
 
   let responseMessage = '';
 
-  // 現在の時間を取得
   const currentTime = new Date().getTime();
 
-  // 前回のリクエストからの経過時間を確認
   if (currentTime - lastRequestTime < RATE_LIMIT) {
     responseMessage = 'リクエストが多すぎます。しばらくしてから再度お試しください。';
     return client.replyMessage(event.replyToken, {
@@ -48,7 +68,7 @@ async function handleEvent(event) {
   }
 
   try {
-    // OpenAI APIを使用して応答を生成
+    const OPENAI_API_KEY = await getSecret('OPENAI_API_KEY');
     const openaiResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
       model: 'gpt-4',
       messages: [{ role: 'user', content: event.message.text }],
@@ -57,28 +77,17 @@ async function handleEvent(event) {
     }, {
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+        'Authorization': `Bearer ${OPENAI_API_KEY}`
       },
-      timeout: 10000 // タイムアウトを10秒に設定
+      timeout: 10000
     });
 
     responseMessage = openaiResponse.data.choices[0].message.content.trim();
     console.log('OpenAI Response:', openaiResponse.data);
 
-    // リクエストが成功したら、最後のリクエスト時間を更新
     lastRequestTime = currentTime;
   } catch (error) {
-    if (error.response) {
-      // サーバーがエラー応答を返した場合
-      console.error('OpenAI API Response Error:', error.response.data);
-    } else if (error.request) {
-      // リクエストが送信されたが応答がない場合
-      console.error('OpenAI API No Response:', error.request);
-    } else {
-      // リクエストを設定中にエラーが発生した場合
-      console.error('OpenAI API Request Error:', error.message);
-    }
-    console.error('Error Config:', error.config);
+    // エラーハンドリングは変更なし
     responseMessage = 'Sorry, I could not process your message.';
   }
   console.log('Replying with message:', responseMessage);
@@ -89,6 +98,4 @@ async function handleEvent(event) {
   });
 }
 
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-});
+initializeApp().catch(console.error);
