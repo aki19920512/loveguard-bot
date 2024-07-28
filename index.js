@@ -81,6 +81,7 @@ async function handleEvent(event) {
     console.error('Error Config:', error.config);
     responseMessage = 'Sorry, I could not process your message.';
   }
+  console.log('Replying with message:', responseMessage);
 
   return client.replyMessage(event.replyToken, {
     type: 'text',

@@ -12,6 +12,10 @@
   "description": "",
   "dependencies": {
     "@line/bot-sdk": "^9.2.2",
+    "axios": "^1.7.2",
     "express": "^4.19.2"
+  },
+  "engines": {
+    "node": "14.x"
   }
 }
